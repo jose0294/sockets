@@ -12,3 +12,5 @@ server.app.use('/',router)
 server.start(()=>{
     console.log(`servidor corriendo een el puerto ${server.port}`)
 })
+
+
