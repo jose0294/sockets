@@ -1,17 +1,19 @@
-#Mi-socket -server
+#Mi-Socket-Server
 
-pasos para reconstruir los modulos de Node
+Pasos para reconstruir los modulos de Node
 
 ```
 npm install
 ```
-pasos para ferear la carpeta dist
+
+Pasos para generar la carpeta dist
+
 ```
 tsc -w
+```
+
+¿Como levantar el servidor?
 
 ```
-mo lebantar el servisor ?
-
-```
-nodemon dist
+nodemon dist/
 ```

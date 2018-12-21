@@ -1,41 +1,77 @@
-import { SERVE_PORT } from "../globals/enviroment";
+//importando libreria express
 import express from 'express';
+import { SERVER_PORT } from '../globals/environment';
 import http from 'http';
-import SocketIO  from "socket.io";
-
-export default class server{
+import socketIO from 'socket.io';
+import { disconnect } from 'cluster';
+import { UsuariosLista } from './usuario-lista';
+import { Usuario } from './usuario';
+//creando la clase del servidor
+export default class Server{
+    
+    //creando la variable del servidor express
     public app:express.Application;
-    public port:number;
+    public port:Number;
     private httpServer:http.Server;
-    public io:SocketIO.Server
+    public io:socketIO.Server;
+    public usuariosConectados = new UsuariosLista();
+    //constructor del Server
+    constructor(){
+        this.app = express();
+        this.port = SERVER_PORT;
+        //Configuando el nuevo servidor web a traves de http
+        this.httpServer = new http.Server(this.app);
+        this.io = socketIO(this.httpServer);
+        this.escucharSocket();
+    }
+    //Programando geter de la unica instancia de la clase
+    //(Patron de Diseño SINGLETON)
+    private static _instance : Server;
+    public static get instance(){
+        if(this._instance){
+            return this._instance;
+        }else{
+            this._instance = new this();
+            return this._instance;
+        }
+    }
+    //funcion para escuchar las conexiones 
+    public escucharSocket()
+    {
+        console.log("Listo para recibir conexiones o sockets o clientes");
+        // el servidor escucha el evento connect y recibe al cliente conectado
+        this.io.on('connect',cliente=>{
+            console.log("Nuevo cliente conectado",cliente.id);
+            const usuario = new Usuario(cliente.id);
+            this.usuariosConectados.agregar(usuario);
 
-   constructor(){
-       this.app=express();
-       this.port=SERVE_PORT;
-       //configurando el nuevo servidir web a travez del http
-       this.httpServer =new http.Server(this.app)
-       this.io=SocketIO(this.httpServer)
-       this.escucharSockets()
-   }
-   //funcon ara escuchar las conecxiones 
-   public escucharSockets(){
-       console.log("lsisto conexiones o sockets o clientes")
-       // el servidr escucha r el evento conncet y recibe sl cliente conectado 
-       this.io.on('connect',cliente=>{
-           console.log("nuevo cliente conenctado")
-           // eñ cliente que se a desconectado previamnte, escucha si deconecion
-           cliente.on('disconnect',()=>{
-               console.log("el cliente se a desconectado")
-           });
-           //el cliente que se ha conectad escuha un evento de nombre :'mensaje'
-           cliente.on('mensaje',contenido=>{
-                console.log("entrada",contenido)
-                this.io.emit('mensaje-nuevo',contenido)
-           })
-        })
-   }
-   //funcion para crear el servidor
-   public start(callback:Function) {
-       this.httpServer.listen(this.port,callback);
-   }
+            
+            // el cliente que se ha conectado previamente, escucha su desconexion
+            cliente.on('disconnect',()=>{
+                console.log("El cliente se ha desconectado");
+                this.usuariosConectados.borrarUsuario(cliente.id);
+                this.io.emit('usuarios-activos',this.usuariosConectados.getLista());
+            });
+            // el cliente que se ha conectado previamente, escucha un evento de nombre: mensaje
+            cliente.on('mensaje',(contenido)=>{
+                console.log("entrada" + contenido);
+                this.io.emit('mensaje-nuevo', contenido);
+            });
+            cliente.on('configurar-usuario',(payload:any,callback:Function)=>{
+                this.usuariosConectados.actualizarNombre(cliente.id,payload.nombre);
+                this.io.emit('usuarios-activos',this.usuariosConectados.getLista());
+                callback({
+                    ok:true,
+                    mensaje:`Usuario ${payload.nombre} configurado`
+                });
+            });
+            cliente.on('obtener-usuarios',()=>{
+                this.io.in(cliente.id).emit('usuarios-activos',this.usuariosConectados.getLista());
+            });
+        });
+    }    
+    //funcion para iniciar el servidor
+    public start(callback:Function){
+        this.httpServer.listen(this.port,callback);
+    }
 }

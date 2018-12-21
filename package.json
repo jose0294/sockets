@@ -1,12 +1,12 @@
 {
-  "name": "socket-serve",
+  "name": "socket-server",
   "version": "1.0.0",
-  "description": "para el proyecto con sockets-backend",
+  "description": "Servidor para el proyecto con sockets - backend",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "jose churata",
+  "author": "Jorge Garnica",
   "license": "MIT",
   "dependencies": {
     "@types/cors": "^2.8.4",
@@ -15,6 +15,7 @@
     "body-parser": "^1.18.3",
     "cors": "^2.8.5",
     "express": "^4.16.4",
-    "socket.io": "^2.2.0"
+    "socket.io": "^2.2.0",
+    "typescript": "^3.2.2"
   }
 }
